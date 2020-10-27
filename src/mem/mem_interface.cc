@@ -42,6 +42,7 @@
 
 #include "base/bitfield.hh"
 #include "base/trace.hh"
+#include "crypto/Qarma64.hh"
 #include "debug/DRAM.hh"
 #include "debug/DRAMPower.hh"
 #include "debug/DRAMState.hh"
@@ -79,6 +80,10 @@ MemInterface::setCtrl(MemCtrl* _ctrl, unsigned int command_window)
 {
     ctrl = _ctrl;
     maxCommandsPerWindow = command_window / tCK;
+
+    Crypto::Qarma64::instance()->setKeyK(0xec2802d4e0a488e9);
+    Crypto::Qarma64::instance()->setKeyW(0x84be85ce9804e94b);
+    Crypto::Qarma64::instance()->setTweak(0x477d469dec0b8762);
 }
 
 MemPacket*
@@ -90,10 +95,11 @@ MemInterface::decodePacket(const PacketPtr pkt, Addr pkt_addr,
     // channel, respectively
     uint8_t rank;
     uint8_t bank;
-    uint8_t new_row;
     // use a 64-bit unsigned during the computations as the row is
     // always the top bits, and check before creating the packet
     uint64_t row;
+    uint64_t pt;
+    uint64_t ct;
 
     // Get packed address, starting at 0
     Addr addr = getCtrlAddr(pkt_addr);
@@ -153,14 +159,33 @@ MemInterface::decodePacket(const PacketPtr pkt, Addr pkt_addr,
 
     if (addrMapRand == Enums::Xor)
     {
-        new_row = row ^ key;
-        DPRINTF(DRAM, "Row change: new_row <%d>, row <%d>\n",
-                new_row, row);
-        row = new_row;
+        DPRINTF(DRAM, "Randomization: Xor\n");
+
+        row  = row ^ key;
+        bank = bank ^ key;
+
+        row  = row % rowsPerBank;
+        bank = bank % banksPerRank;
+    }
+    else if (addrMapRand == Enums::Qarma)
+    {
+        DPRINTF(DRAM, "Randomization: Qarma\n");
+
+        pt = (uint64_t)rank;
+        pt = pt * (uint64_t)ranksPerChannel;
+        pt = pt | (uint64_t)bank;
+        pt = pt * (uint64_t)banksPerRank;
+        pt = pt | (uint64_t)row;
+
+        ct = Crypto::Qarma64::instance()->enc(pt);
+
+        row  = ct % (uint64_t)rowsPerBank;
+        ct   = ct / (uint64_t)rowsPerBank;
+        bank = (uint8_t)(ct % banksPerRank);
     }
     else // if (addrMapRand == Enums::NoRand)
     {
-        DPRINTF(DRAM, "No addrress mapping ranomization\n");
+        DPRINTF(DRAM, "No adrress mapping randomization\n");
     }
 
     assert(rank < ranksPerChannel);
