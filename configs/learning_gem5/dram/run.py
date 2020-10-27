@@ -1,5 +1,11 @@
+
+from __future__ import print_function
+from __future__ import absolute_import
+
 import m5
 from m5.objects import *
+m5.util.addToPath('../../')
+from caches import *
 
 # Set the clock fequency of the system (and all of its children)
 system = System()
@@ -13,17 +19,35 @@ system.clk_domain.voltage_domain = VoltageDomain()
 system.mem_mode = 'timing'
 system.mem_ranges = [AddrRange('8192MB')]
 
-# Create TimingSimpleCPU
+# Create a simple CPU
 system.cpu = TimingSimpleCPU()
 
+# Create an L1 instruction and data cache
+system.cpu.icache = L1ICache()
+system.cpu.dcache = L1DCache()
+
+# Connect the instruction and data caches to the CPU
+system.cpu.icache.connectCPU(system.cpu)
+system.cpu.dcache.connectCPU(system.cpu)
+
 # Create a memory bus, a coherent crossbar, in this case
+system.l2bus = L2XBar()
+
+# Hook the CPU ports up to the l2bus
+system.cpu.icache.connectBus(system.l2bus)
+system.cpu.dcache.connectBus(system.l2bus)
+
+# Create an L2 cache and connect it to the l2bus
+system.l2cache = L2Cache()
+system.l2cache.connectCPUSideBus(system.l2bus)
+
+# Create a memory bus
 system.membus = SystemXBar()
 
-# Hook the CPU ports up to the membus
-system.cpu.icache_port = system.membus.slave
-system.cpu.dcache_port = system.membus.slave
+# Connect the L2 cache to the membus
+system.l2cache.connectMemSideBus(system.membus)
 
-# Create InterruptController
+# create the interrupt controller for the CPU
 system.cpu.createInterruptController()
 system.cpu.interrupts[0].pio = system.membus.master
 system.cpu.interrupts[0].int_master = system.membus.slave
