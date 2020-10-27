@@ -1,10 +1,9 @@
-#include "crypt/Qarma64.hh"
-
-// #include <assert.h>
-#include "crypto/qarma64.c"
+#include "crypto/Qarma64.hh"
 
 #include "base/trace.hh"
 #include "debug/QARMA64.hh"
+
+#include "crypto/qarma64.c"
 
 Crypto::Qarma64* Crypto::Qarma64::instance_ = 0;
 
@@ -50,7 +49,6 @@ void Crypto::Qarma64::setKeyW(key_t w0)
 
 text_t Crypto::Qarma64::enc(text_t plaintext, int rounds)
 {
-  assert(tweak_ != -1 && w0_ != -1 && k0_ != -1);
   text_t ciphertext = qarma64_enc(plaintext, tweak_, w0_, k0_, rounds);
   DPRINTF(QARMA64, "Qarma64::enc <%lu> -> <%lu>\n", plaintext, ciphertext);
   return ciphertext;
@@ -58,7 +56,6 @@ text_t Crypto::Qarma64::enc(text_t plaintext, int rounds)
 
 text_t Crypto::Qarma64::dec(text_t ciphertext, int rounds)
 {
-  assert(tweak_ != -1 && w0_ != -1 && k0_ != -1);
   text_t plaintext =  qarma64_dec(ciphertext, tweak_, w0_, k0_, rounds);
   DPRINTF(QARMA64, "Qarma64::dec <%lu> -> <%lu>\n", ciphertext, plaintext);
   return plaintext;
