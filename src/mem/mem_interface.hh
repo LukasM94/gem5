@@ -54,6 +54,7 @@
 
 #include "base/statistics.hh"
 #include "enums/AddrMap.hh"
+#include "enums/AddrMapRand.hh"
 #include "enums/PageManage.hh"
 #include "mem/abstract_mem.hh"
 #include "mem/drampower.hh"
@@ -120,6 +121,12 @@ class MemInterface : public AbstractMemory
      * values.
      */
     Enums::AddrMap addrMapping;
+
+    /**
+     * Randomized mapping of the address mapping.
+     */
+    Enums::AddrMapRand addrMapRand;
+    uint8_t key;
 
     /**
      * General device and channel characteristics

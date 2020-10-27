@@ -50,6 +50,7 @@ from m5.objects.AbstractMemory import AbstractMemory
 # hitting in the open row. For a closed-page policy, RoCoRaBaCh
 # maximises parallelism.
 class AddrMap(Enum): vals = ['RoRaBaChCo', 'RoRaBaCoCh', 'RoCoRaBaCh']
+class AddrMapRand(Enum): vals = ['NoRand', 'Xor']
 
 class MemInterface(AbstractMemory):
     type = 'MemInterface'
@@ -65,6 +66,12 @@ class MemInterface(AbstractMemory):
 
     # scheduler, address map
     addr_mapping = Param.AddrMap('RoRaBaCoCh', "Address mapping policy")
+
+    # address map randomization
+    # addr_map_rand = Param.AddrMapRand('NoRand', \
+    #                                   "Address randomization policy")
+    addr_map_rand = Param.AddrMapRand('Xor', "Address randomization policy")
+    key = Param.Unsigned(27, "Key for the randomization")
 
     # size of memory device in Bytes
     device_size = Param.MemorySize("Size of memory device")

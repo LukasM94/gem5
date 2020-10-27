@@ -54,6 +54,8 @@ using namespace Data;
 MemInterface::MemInterface(const MemInterfaceParams* _p)
     : AbstractMemory(_p),
       addrMapping(_p->addr_mapping),
+      addrMapRand(_p->addr_map_rand),
+      key(_p->key),
       burstSize((_p->devices_per_rank * _p->burst_length *
                  _p->device_bus_width) / 8),
       deviceSize(_p->device_size),
@@ -88,6 +90,7 @@ MemInterface::decodePacket(const PacketPtr pkt, Addr pkt_addr,
     // channel, respectively
     uint8_t rank;
     uint8_t bank;
+    uint8_t new_row;
     // use a 64-bit unsigned during the computations as the row is
     // always the top bits, and check before creating the packet
     uint64_t row;
@@ -147,6 +150,18 @@ MemInterface::decodePacket(const PacketPtr pkt, Addr pkt_addr,
         row = addr % rowsPerBank;
     } else
         panic("Unknown address mapping policy chosen!");
+
+    if (addrMapRand == Enums::Xor)
+    {
+        new_row = row ^ key;
+        DPRINTF(DRAM, "Row change: new_row <%d>, row <%d>\n",
+                new_row, row);
+        row = new_row;
+    }
+    else // if (addrMapRand == Enums::NoRand)
+    {
+        DPRINTF(DRAM, "No addrress mapping ranomization\n");
+    }
 
     assert(rank < ranksPerChannel);
     assert(bank < banksPerRank);
