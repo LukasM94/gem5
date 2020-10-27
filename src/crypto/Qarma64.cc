@@ -1,9 +1,10 @@
 #include "crypt/Qarma64.hh"
 
 // #include <assert.h>
+#include "crypto/qarma64.c"
 
-// #include "base/trace.hh"
-// #include "debug/QARMA64.hh"
+#include "base/trace.hh"
+#include "debug/QARMA64.hh"
 
 Crypto::Qarma64* Crypto::Qarma64::instance_ = 0;
 
